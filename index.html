@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice-Based Email System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            padding: 12px 24px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            position: relative;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .button.secondary {
+            background-color: #f44336;
+        }
+        .button.secondary:hover {
+            background-color: #da190b;
+        }
+        .button.test {
+            background-color: #2196F3;
+        }
+        .button.test:hover {
+            background-color: #1976D2;
+        }
+        .button.voice {
+            background-color: #9C27B0;
+            display: block;
+            margin: 20px auto;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+        .button.voice:hover {
+            background-color: #7B1FA2;
+        }
+        .button.voice.listening {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .status-success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .status-error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+        .status-info {
+            background-color: #d9edf7;
+            color: #31708f;
+            border: 1px solid #bce8f1;
+        }
+        .hidden {
+            display: none;
+        }
+        #emailList {
+            margin-top: 20px;
+        }
+        .email-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: #fff;
+            transition: all 0.3s ease;
+        }
+        .email-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .email-item.inbox {
+            border-left: 4px solid #4CAF50;
+        }
+        .email-item.sent {
+            border-left: 4px solid #2196F3;
+        }
+        .email-item.unread {
+            border-left: 4px solid #FF9800;
+            background-color: #fff3e0;
+        }
+        .email-item.trash {
+            border-left: 4px solid #9E9E9E;
+            background-color: #f5f5f5;
+        }
+        .email-folder {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .email-folder.inbox {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .email-folder.sent {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .email-folder.unread {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+        .email-folder.trash {
+            background-color: #fbe9e7;
+            color: #d32f2f;
+        }
+        .email-date {
+            color: #666;
+            font-size: 12px;
+        }
+        .email-header {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        .email-header strong {
+            color: #333;
+            min-width: 60px;
+            display: inline-block;
+        }
+        .email-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+        .email-subject {
+            margin: 8px 0;
+            font-size: 16px;
+            color: #000;
+            word-break: break-word;
+        }
+        .loading-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 4px;
+            color: #856404;
+        }
+        .voice-commands {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8eaf6;
+            border: 1px solid #c5cae9;
+            border-radius: 4px;
+            color: #3949ab;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    <h1>Voice-Based Email System</h1>
+    
+        <div class="instructions">
+            <h3>Voice Recognition Tips:</h3>
+            <ul>
+                <li>Speak clearly and at a normal pace</li>
+                <li>Minimize background noise</li>
+                <li>Keep your microphone close</li>
+                <li>Wait for the "Listening..." message before speaking</li>
+            </ul>
+        </div>
+
+        <div id="loginSection" {% if logged_in %}class="hidden"{% endif %}>
+            <button class="button test" onclick="testMicrophone()">Test Microphone</button>
+            <button class="button" onclick="login()" id="loginButton">Login with Voice</button>
+        </div>
+
+        <div id="emailSection" {% if not logged_in %}class="hidden"{% endif %}>
+            <button class="button voice" onclick="listenForCommands()" id="voiceCommandButton">
+                🎤 Voice Commands
+            </button>
+            
+            <div class="voice-commands">
+                <h3>Available Voice Commands:</h3>
+                <ul>
+                    <li>"Compose email" - Start composing a new email</li>
+                    <li>"Read inbox" - Check your inbox</li>
+                    <li>"Read unread" - Check unread messages</li>
+                    <li>"Read sent" - Check sent messages (also works with "send", "saint", "scent")</li>
+                    <li>"Read trash" - Check deleted messages</li>
+                    <li>"Return to main menu" - Go back to command mode from any section</li>
+                    <li>"Logout" - Sign out of your account</li>
+                    <li>"Help" - List available commands</li>
+                </ul>
+            </div>
+
+            <button class="button" onclick="composeEmail()" id="composeButton">Compose Email</button>
+            <button class="button" onclick="readInbox()" id="readButton">Read Inbox</button>
+            <button class="button" onclick="readUnread()" id="unreadButton" style="background-color: #FF9800;">Read Unread</button>
+            <button class="button" onclick="readSent()" id="sentButton" style="background-color: #2196F3;">Read Sent</button>
+            <button class="button" onclick="readTrash()" id="trashButton" style="background-color: #9E9E9E;">Read Trash</button>
+            <button class="button secondary" onclick="logout()">Logout</button>
+        </div>
+
+    <div id="status"></div>
+        <div id="emailList"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status-${type}`;
+            statusDiv.innerHTML = message;
+        }
+
+        function setLoading(buttonId, isLoading) {
+            const button = document.getElementById(buttonId);
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = button.textContent + ' <span class="loading-indicator"></span>';
+            } else {
+                button.disabled = false;
+                button.innerHTML = button.textContent;
+            }
+        }
+
+        // Auto listen for commands when page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in before starting voice command listener
+            const emailSection = document.getElementById('emailSection');
+            if (!emailSection.classList.contains('hidden')) {
+                // User is logged in, show a welcome message and start listening
+                showStatus('Welcome back! Voice command mode is starting...', 'info');
+                setTimeout(function() {
+                    // Start voice mode automatically
+                    toggleContinuousListening();
+                }, 2000);
+            } else {
+                // User is not logged in
+                showStatus('Welcome! Say "login" or click "Login with Voice" to get started.', 'info');
+                setTimeout(function() {
+                    // Add event listener for the "login" command
+                    if (document.referrer === '' || !document.referrer.includes(window.location.host)) {
+                        // Only auto-prompt on initial page load, not after logout which is handled separately
+                        setupVoiceLogin();
+                    }
+                }, 2000);
+            }
+            
+            // Add welcome message with voice command information
+            const voiceButton = document.getElementById('voiceCommandButton');
+            if (voiceButton) {
+                // Update tooltips and info about voice mode
+                voiceButton.setAttribute('title', 'Click once to listen for a single command, double-click to enable continuous listening mode');
+                
+                // Add a notice about voice mode
+                const statusDiv = document.getElementById('status');
+                if (!statusDiv.innerHTML) {
+                    statusDiv.className = 'status-info';
+                    statusDiv.innerHTML = `<b>Voice Command Tips:</b>
+                        <ul>
+                            <li>Say "help" at any time to hear available commands</li>
+                            <li>Double-click the purple button to toggle continuous listening mode</li>
+                            <li>Say "stop listening" to exit voice mode</li>
+                        </ul>`;
+                }
+            }
+        });
+
+        function setupVoiceLogin() {
+            showStatus('Listening for login command... Please say "login" to proceed', 'info');
+            
+            fetch('/test_microphone', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Check if the user said "login" or a variation
+                    const spokenText = data.text.toLowerCase();
+                    if (spokenText.includes('login') || 
+                        spokenText.includes('log in') || 
+                        spokenText.includes('sign in') || 
+                        spokenText.includes('enter')) {
+                        // User said "login" or similar, proceed with login
+                        login();
+                    } else {
+                        // If they didn't say login, prompt again after a short delay
+                        showStatus('Voice command not recognized as login. Please say "login" to proceed or click the Login button.', 'error');
+                        setTimeout(setupVoiceLogin, 3000);
+                    }
+                } else {
+                    // If there was an error with voice recognition, show the error and try again
+                    showStatus('Error listening for login command: ' + data.message + '. Will try again...', 'error');
+                    setTimeout(setupVoiceLogin, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error setting up voice login:', error);
+                showStatus('Error setting up voice login. Please try again or click the Login button.', 'error');
+            });
+        }
+
+        function testMicrophone() {
+            showStatus('Testing microphone... Please speak a test phrase when prompted', 'info');
+            setLoading('loginButton', true);
+            
+            fetch('/test_microphone', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus('Microphone test successful! Your voice was recognized: "' + data.text + '"', 'success');
+                } else {
+                    showStatus('Microphone test failed: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showStatus('An error occurred during microphone test', 'error');
+            })
+            .finally(() => {
+                setLoading('loginButton', false);
+            });
+        }
+
+        function login() {
+            showStatus('Starting voice login process... Please speak your email keyword when prompted', 'info');
+            setLoading('loginButton', true);
+            
+            fetch('/login', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('emailSection').classList.remove('hidden');
+                    showStatus(data.message + '. Starting voice command mode...', 'success');
+                    // Automatically enable continuous voice command mode after successful login
+                    setTimeout(() => {
+                        continuousListeningEnabled = true;
+                        const voiceButton = document.getElementById('voiceCommandButton');
+                        voiceButton.style.backgroundColor = '#4A148C';
+                        voiceButton.innerHTML = '🎤 Voice Mode Active';
+                        voiceButton.classList.add('listening');
+                        continuousListening();
+                    }, 1500);
+                } else {
+                    showStatus(data.message + ' Please try again.', 'error');
+                    // Automatically try again after a failed login
+                    setTimeout(() => {
+                        setupVoiceLogin();
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                showStatus('An error occurred during login. Please try again.', 'error');
+                // Automatically try again after an error
+                setTimeout(() => {
+                    setupVoiceLogin();
+                }, 3000);
+            })
+            .finally(() => {
+                setLoading('loginButton', false);
+            });
+        }
+
+        function logout() {
+            fetch('/logout', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('emailSection').classList.add('hidden');
+                document.getElementById('emailList').innerHTML = '';
+                showStatus(data.message, 'success');
+                
+                // Automatically prompt for voice login after successful logout
+                setTimeout(() => {
+                    showStatus('You can now login by voice. Say "login" or wait for automatic prompt...', 'info');
+                    
+                    // Wait another moment and then automatically start listening for login
+                    setTimeout(() => {
+                        setupVoiceLogin();
+                    }, 2000);
+                }, 1500);
+            });
+        }
+
+        function listenForCommands() {
+            const voiceButton = document.getElementById('voiceCommandButton');
+            voiceButton.classList.add('listening');
+            voiceButton.innerHTML = '🎤 Listening...';
+            showStatus('Listening for voice commands... Please speak a command.', 'info');
+            
+            fetch('/listen_for_commands', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Process the action
+                    switch(data.action) {
+                        case 'compose':
+                            showStatus('Voice command recognized: Compose Email', 'success');
+                            composeEmail();
+                            break;
+                        case 'read_inbox':
+                            showStatus('Voice command recognized: Read Inbox', 'success');
+                            readInbox();
+                            break;
+                        case 'read_unread':
+                            showStatus('Voice command recognized: Read Unread', 'success');
+                            readUnread();
+                            break;
+                        case 'read_sent':
+                            showStatus('Voice command recognized: Read Sent Mail', 'success');
+                            readSent();
+                            break;
+                        case 'read_trash':
+                            showStatus('Voice command recognized: Read Trash', 'success');
+                            readTrash();
+                            break;
+                        case 'listen_for_commands':
+                            showStatus('Returning to command mode...', 'info');
+                            if (data.reload_page) {
+                                location.reload();
+                            } else {
+                                setTimeout(continuousListening, 2000);
+                            }
+                            break;
+                        case 'logout':
+                            showStatus('Voice command recognized: Logout', 'success');
+                            continuousListeningEnabled = false; // Disable continuous listening on logout
+                            logout();
+                            break;
+                        case 'help':
+                            showStatus('Available voice commands: <br>"compose email"<br>"read inbox"<br>"read unread"<br>"read sent" (also works with: send, saint, scent, cent)<br>"read trash"<br>"return to main menu"<br>"stop listening"<br>"logout"', 'info');
+                            setTimeout(continuousListening, 3000);
+                            break;
+                        case 'login':
+                            showStatus('Voice command recognized: Login', 'success');
+                            login();
+                            break;
+                        default:
+                            showStatus('Command not recognized, please try again', 'error');
+                            // Continue listening after error
+                            setTimeout(continuousListening, 3000);
+                    }
+                } else {
+                    showStatus('Error: ' + data.message, 'error');
+                    // Continue listening after error
+                    setTimeout(continuousListening, 3000);
+                }
+            })
+            .catch(error => {
+                showStatus('An error occurred while processing voice command', 'error');
+                // Continue listening after error
+                setTimeout(continuousListening, 3000);
+            })
+            .finally(() => {
+                voiceButton.classList.remove('listening');
+                voiceButton.innerHTML = '🎤 Voice Commands';
+            });
+        }
+
+        // Function to enable continuous voice command listening
+        let continuousListeningEnabled = false;
+
+        function toggleContinuousListening() {
+            continuousListeningEnabled = !continuousListeningEnabled;
+            const voiceButton = document.getElementById('voiceCommandButton');
+            
+            if (continuousListeningEnabled) {
+                voiceButton.style.backgroundColor = '#4A148C'; // Darker purple for active mode
+                voiceButton.innerHTML = '🎤 Voice Mode Active';
+                voiceButton.classList.add('listening');
+                showStatus('Continuous voice command mode enabled. System will keep listening for commands.', 'success');
+                continuousListening();
+            } else {
+                voiceButton.style.backgroundColor = '#9C27B0'; // Original color
+                voiceButton.innerHTML = '🎤 Voice Commands';
+                voiceButton.classList.remove('listening');
+                showStatus('Continuous voice command mode disabled.', 'info');
+            }
+        }
+
+        function continuousListening() {
+            if (!continuousListeningEnabled) return;
+            
+            const voiceButton = document.getElementById('voiceCommandButton');
+            // Check if we're in an email section and logged in
+            const emailSection = document.getElementById('emailSection');
+            if (emailSection.classList.contains('hidden')) return;
+            
+            voiceButton.classList.add('listening');
+            showStatus('Listening for next command...', 'info');
+            
+            fetch('/listen_for_commands', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Process the action
+                    switch(data.action) {
+                        case 'compose':
+                            showStatus('Voice command recognized: Compose Email', 'success');
+                            composeEmail();
+                            break;
+                        case 'read_inbox':
+                            showStatus('Voice command recognized: Read Inbox', 'success');
+                            readInbox();
+                            break;
+                        case 'read_unread':
+                            showStatus('Voice command recognized: Read Unread', 'success');
+                            readUnread();
+                            break;
+                        case 'read_sent':
+                            showStatus('Voice command recognized: Read Sent Mail', 'success');
+                            readSent();
+                            break;
+                        case 'read_trash':
+                            showStatus('Voice command recognized: Read Trash', 'success');
+                            readTrash();
+                            break;
+                        case 'listen_for_commands':
+                            showStatus('Returning to command mode...', 'info');
+                            if (data.reload_page) {
+                                location.reload();
+                            } else {
+                                setTimeout(continuousListening, 2000);
+                            }
+                            break;
+                        case 'logout':
+                            showStatus('Voice command recognized: Logout', 'success');
+                            continuousListeningEnabled = false; // Disable continuous listening on logout
+                            logout();
+                            break;
+                        case 'help':
+                            showStatus('Available voice commands: <br>"compose email"<br>"read inbox"<br>"read unread"<br>"read sent" (also works with: send, saint, scent, cent)<br>"read trash"<br>"return to main menu"<br>"stop listening"<br>"logout"', 'info');
+                            setTimeout(continuousListening, 3000);
+                            break;
+                        default:
+                            if (data.action && data.action.includes('stop') && (data.action.includes('listen') || data.action.includes('voice'))) {
+                                toggleContinuousListening(); // Turn off continuous listening
+                            } else {
+                                showStatus('Command not recognized, please try again', 'error');
+                                setTimeout(continuousListening, 3000);
+                            }
+                    }
+                } else {
+                    showStatus('Error: ' + data.message + '. Will continue listening.', 'error');
+                    setTimeout(continuousListening, 3000);
+                }
+            })
+            .catch(error => {
+                showStatus('An error occurred. Will continue listening.', 'error');
+                setTimeout(continuousListening, 3000);
+            })
+            .finally(() => {
+                if (continuousListeningEnabled) {
+                    voiceButton.innerHTML = '🎤 Voice Mode Active';
+                } else {
+                    voiceButton.classList.remove('listening');
+                    voiceButton.innerHTML = '🎤 Voice Commands';
+                }
+            });
+        }
+
+        // Update the voice command button to toggle continuous mode on double click
+        document.addEventListener('DOMContentLoaded', function() {
+            const voiceButton = document.getElementById('voiceCommandButton');
+            if (voiceButton) {
+                voiceButton.addEventListener('dblclick', function(e) {
+                    e.preventDefault();
+                    toggleContinuousListening();
+                });
+                
+                // Update the onclick to handle single clicks differently
+                voiceButton.onclick = function(e) {
+                    if (!continuousListeningEnabled) {
+                        listenForCommands();
+                    } else {
+                        toggleContinuousListening(); // Turn off if already on
+                    }
+                };
+            }
+        });
+
+        function composeEmail() {
+            showStatus('Starting voice email composition... Please speak when prompted', 'info');
+            setLoading('composeButton', true);
+            
+            fetch('/compose', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus(data.message, 'success');
+                    // Handle redirection to command mode
+                    if (data.action === 'listen_for_commands') {
+                        if (data.reload_page) {
+                            // Reload the page after a brief delay to show success message
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            setTimeout(continuousListening, 2000);
+                        }
+                    }
+                } else if (data.status === 'cancelled') {
+                    showStatus(data.message, 'info');
+                    // Handle redirection to command mode
+                    if (data.action === 'listen_for_commands') {
+                        if (data.reload_page) {
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            setTimeout(continuousListening, 2000);
+                        }
+                    }
+                } else {
+                    showStatus(data.message, 'error');
+                    // Handle redirection to command mode even on error
+                    if (data.action === 'listen_for_commands') {
+                        if (data.reload_page) {
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            setTimeout(continuousListening, 2000);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                showStatus('An error occurred while composing the email', 'error');
+            })
+            .finally(() => {
+                setLoading('composeButton', false);
+            });
+        }
+
+        function readInbox() {
+            showStatus('Fetching inbox emails...', 'info');
+            setLoading('readButton', true);
+            
+            // Set a timeout to ensure we return to command mode even if the request hangs
+            const timeoutId = setTimeout(() => {
+                showStatus('Request took too long. Returning to command mode...', 'info');
+                setTimeout(() => location.reload(), 2000);
+            }, 15000); // 15 second timeout
+            
+            fetch('/read_inbox')
+            .then(response => response.json())
+            .then(data => {
+                clearTimeout(timeoutId); // Clear the timeout since request succeeded
+                if (data.status === 'success') {
+                    // Store inbox emails for later use
+                    const inboxEmails = data.emails;
+                    if (inboxEmails.length === 0) {
+                        document.getElementById('emailList').innerHTML = '<div class="email-item">No inbox messages</div>';
+                        showStatus('No inbox messages. Returning to command mode...', 'info');
+                        // Handle redirect back to command mode
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        const emailListHtml = inboxEmails.map((email, index) => {
+                            return `<div class="email-item inbox" data-index="${index}">
+                                <div class="email-top">
+                                    <span class="email-folder inbox">Inbox</span>
+                                    <span class="email-date">${new Date(email.date).toLocaleString()}</span>
+                                </div>
+                                <div class="email-header">
+                                    <strong>From:</strong> ${email.sender}
+                                </div>
+                                <div class="email-subject">
+                                    <strong>Subject:</strong> ${email.subject}
+                                </div>
+                            </div>`;
+                        }).join('');
+                        
+                        document.getElementById('emailList').innerHTML = emailListHtml;
+                        showStatus(`Found ${inboxEmails.length} inbox message(s). Say a command like 'read first', 'read second', etc. to read specific emails.`, 'info');
+                        
+                        // Start reading sequence with inbox emails
+                        readEmailsSequentially(inboxEmails);
+                    }
+                } else {
+                    showStatus('Failed to fetch inbox emails: ' + data.message + '. Returning to command mode...', 'error');
+                    // Directly reload page on error
+                    setTimeout(() => location.reload(), 3000);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId); // Clear the timeout
+                showStatus('An error occurred while fetching inbox emails. Returning to command mode...', 'error');
+                // Directly reload page on error
+                setTimeout(() => location.reload(), 3000);
+            })
+            .finally(() => {
+                setLoading('readButton', false);
+            });
+        }
+
+        function readSent() {
+            showStatus('Fetching sent emails...', 'info');
+            setLoading('sentButton', true);
+            
+            // Set a timeout to ensure we return to command mode even if the request hangs
+            const timeoutId = setTimeout(() => {
+                showStatus('Request took too long. Returning to command mode...', 'info');
+                setTimeout(() => location.reload(), 2000);
+            }, 15000); // 15 second timeout
+            
+            fetch('/read_sent')
+            .then(response => response.json())
+            .then(data => {
+                clearTimeout(timeoutId); // Clear the timeout since request succeeded
+                if (data.status === 'success') {
+                    if (data.emails.length === 0) {
+                        document.getElementById('emailList').innerHTML = '<div class="email-item">No sent messages</div>';
+                        showStatus('No sent messages. Returning to command mode...', 'info');
+                        // Handle redirect back to command mode
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        const emailListHtml = data.emails.map((email, index) => {
+                            let previewHtml = '';
+                            if (email.body) {
+                                previewHtml = `
+                                    <div class="email-preview">
+                                        ${email.body}
+                                    </div>
+                                `;
+                            }
+                            
+                            return `<div class="email-item sent" data-index="${index}">
+                                <div class="email-top">
+                                    <span class="email-folder sent">Sent</span>
+                                    <span class="email-date">${new Date(email.date).toLocaleString()}</span>
+                                </div>
+                                <div class="email-header">
+                                    <strong>To:</strong> ${email.recipient}
+                                </div>
+                                <div class="email-subject">
+                                    <strong>Subject:</strong> ${email.subject}
+                                </div>
+                                ${previewHtml}
+                            </div>`;
+                        }).join('');
+                        
+                        document.getElementById('emailList').innerHTML = emailListHtml;
+                        showStatus(`Found ${data.emails.length} sent message(s). Say a command like 'read first', 'read second', etc. to read specific emails.`, 'info');
+                        
+                        // Start reading sequence with sent emails
+                        readEmailsSequentially(data.emails);
+                    }
+                } else {
+                    showStatus('Failed to fetch sent emails: ' + data.message + '. Returning to command mode...', 'error');
+                    // Directly reload page on error
+                    setTimeout(() => location.reload(), 3000);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId); // Clear the timeout
+                showStatus('An error occurred while fetching sent emails. Returning to command mode...', 'error');
+                // Directly reload page on error
+                setTimeout(() => location.reload(), 3000);
+            })
+            .finally(() => {
+                setLoading('sentButton', false);
+            });
+        }
+
+        function readTrash() {
+            showStatus('Fetching trash emails...', 'info');
+            setLoading('trashButton', true);
+            
+            // Set a timeout to ensure we return to command mode even if the request hangs
+            const timeoutId = setTimeout(() => {
+                showStatus('Request took too long. Returning to command mode...', 'info');
+                setTimeout(() => location.reload(), 2000);
+            }, 15000); // 15 second timeout
+            
+            fetch('/read_trash')
+            .then(response => response.json())
+            .then(data => {
+                clearTimeout(timeoutId); // Clear the timeout since request succeeded
+                if (data.status === 'success') {
+                    if (data.emails.length === 0) {
+                        document.getElementById('emailList').innerHTML = '<div class="email-item">No trash messages</div>';
+                        showStatus('No trash messages. Returning to command mode...', 'info');
+                        // Handle redirect back to command mode
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        const emailListHtml = data.emails.map((email, index) => {
+                            // Generate HTML for trash emails
+                            return `<div class="email-item trash" data-index="${index}">
+                                <div class="email-top">
+                                    <span class="email-folder trash">Trash</span>
+                                    <span class="email-date">${new Date(email.date).toLocaleString()}</span>
+                                </div>
+                                <div class="email-header">
+                                    <strong>From:</strong> ${email.sender}
+                                </div>
+                                <div class="email-subject">
+                                    <strong>Subject:</strong> ${email.subject}
+                                </div>
+                            </div>`;
+                        }).join('');
+                        
+                        document.getElementById('emailList').innerHTML = emailListHtml;
+                        showStatus(`Found ${data.emails.length} trash message(s). Say a command like 'read first', 'read second', etc. to read specific emails.`, 'info');
+                        
+                        // Start reading sequence with trash emails
+                        readEmailsSequentially(data.emails);
+                    }
+                } else {
+                    showStatus('Failed to fetch trash emails: ' + data.message + '. Returning to command mode...', 'error');
+                    // Directly reload page on error
+                    setTimeout(() => location.reload(), 3000);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId); // Clear the timeout
+                showStatus('An error occurred while fetching trash emails. Returning to command mode...', 'error');
+                // Directly reload page on error
+                setTimeout(() => location.reload(), 3000);
+            })
+            .finally(() => {
+                setLoading('trashButton', false);
+            });
+        }
+
+        function formatRelativeTime(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays < 7) return `${diffDays} days ago`;
+            return new Date(dateStr).toLocaleString();
+        }
+
+        function readUnread() {
+            showStatus('Fetching unread emails...', 'info');
+            setLoading('unreadButton', true);
+            
+            // Set a timeout to ensure we return to command mode even if the request hangs
+            const timeoutId = setTimeout(() => {
+                showStatus('Request took too long. Returning to command mode...', 'info');
+                setTimeout(() => location.reload(), 2000);
+            }, 15000); // 15 second timeout
+            
+            fetch('/read_unread')
+            .then(response => response.json())
+            .then(data => {
+                clearTimeout(timeoutId); // Clear the timeout since request succeeded
+                if (data.status === 'success') {
+                    if (data.emails.length === 0) {
+                        document.getElementById('emailList').innerHTML = '<div class="email-item">No unread messages</div>';
+                        showStatus('No unread messages. Returning to command mode...', 'info');
+                        // Handle redirect back to command mode
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        const emailListHtml = data.emails.map((email, index) => {
+                            return `<div class="email-item unread" data-index="${index}">
+                                <div class="email-top">
+                                    <span class="email-folder unread">Unread</span>
+                                    <span class="email-date">${new Date(email.date).toLocaleString()}</span>
+                                </div>
+                                <div class="email-header">
+                                    <strong>From:</strong> ${email.sender}
+                                </div>
+                                <div class="email-subject">
+                                    <strong>Subject:</strong> ${email.subject}
+                                </div>
+                            </div>`;
+                        }).join('');
+                        
+                        document.getElementById('emailList').innerHTML = emailListHtml;
+                        showStatus(`Found ${data.total} new unread message(s). Say a command like 'read first', 'read second', etc. to read specific emails.`, 'info');
+                        
+                        // Start reading sequence
+                        readEmailsSequentially(data.emails);
+                    }
+                } else {
+                    showStatus('Failed to fetch unread emails: ' + data.message + '. Returning to command mode...', 'error');
+                    // Directly reload page on error
+                    setTimeout(() => location.reload(), 3000);
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId); // Clear the timeout
+                showStatus('An error occurred while fetching unread emails. Returning to command mode...', 'error');
+                // Directly reload page on error
+                setTimeout(() => location.reload(), 3000);
+            })
+            .finally(() => {
+                setLoading('unreadButton', false);
+            });
+        }
+
+        async function readEmailsSequentially(emails) {
+            let currentIndex = 0;
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            
+            // First, just display the emails without reading
+            emails.forEach((email, index) => {
+                const emailElements = document.querySelectorAll('.email-item.unread, .email-item.sent, .email-item.inbox, .email-item.trash');
+                if (emailElements[index]) {
+                    emailElements[index].setAttribute('data-index', index);
+                }
+            });
+            
+            showStatus(`Found ${emails.length} emails. Say a command like 'read first', 'read second', etc. to read specific emails. Say 'return to main menu' to go back.`, 'info');
+            
+            try {
+                while (currentIndex < emails.length) {
+                    const email = emails[currentIndex];
+                    showStatus(`Email ${currentIndex + 1} of ${emails.length}. Say 'read' to hear this email, or 'return to main menu' to go back.`, 'info');
+                    
+                    let shouldRetry = false;
+                    do {
+                        try {
+                            // Add delay between attempts
+                            await sleep(1000);
+                            
+                            const response = await fetch('/read_email_aloud', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ 
+                                    email: email,
+                                    index: currentIndex
+                                })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.status === 'success') {
+                                shouldRetry = false;
+                                if (result.action === 'read') {
+                                    // Email was read, highlight it
+                                    const emailElements = document.querySelectorAll('.email-item.unread, .email-item.sent, .email-item.inbox, .email-item.trash');
+                                    if (emailElements[currentIndex]) {
+                                        emailElements[currentIndex].style.backgroundColor = '#e8f5e9';
+                                        emailElements[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                    // Move to next email
+                                    currentIndex++;
+                                } else if (result.action === 'skip') {
+                                    // Email was skipped, mark it differently
+                                    const emailElements = document.querySelectorAll('.email-item.unread, .email-item.sent, .email-item.inbox, .email-item.trash');
+                                    if (emailElements[currentIndex]) {
+                                        emailElements[currentIndex].style.backgroundColor = '#fff3e0';
+                                        emailElements[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                    // Move to next email
+                                    currentIndex++;
+                                } else if (result.action === 'jump') {
+                                    // User wants to jump to a specific email
+                                    if (result.target_index >= 0 && result.target_index < emails.length) {
+                                        currentIndex = result.target_index;
+                                        const emailElements = document.querySelectorAll('.email-item.unread, .email-item.sent, .email-item.inbox, .email-item.trash');
+                                        if (emailElements[currentIndex]) {
+                                            emailElements[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        }
+                                    } else {
+                                        showStatus('Invalid email number. Please try again.', 'error');
+                                        shouldRetry = true;
+                                    }
+                                } else if (result.action === 'return_to_menu') {
+                                    // User wants to return to main menu
+                                    showStatus('Returning to main menu...', 'info');
+                                    await sleep(1000);
+                                    // Directly reload the page to get back to command mode reliably
+                                    location.reload();
+                                    return; // Exit the function completely
+                                }
+                                // Add delay before next email
+                                if (!shouldRetry) await sleep(500);
+                            } else {
+                                showStatus('Error: ' + result.message + '. Click Retry to try again.', 'error');
+                                shouldRetry = await showRetryButton();
+                                if (!shouldRetry) break;
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            showStatus('An error occurred. Click Retry to try again.', 'error');
+                            shouldRetry = await showRetryButton();
+                            if (!shouldRetry) break;
+                        }
+                    } while (shouldRetry);
+                    
+                    // If user chose to stop reading or we've finished all emails
+                    if (!shouldRetry && currentIndex >= emails.length) {
+                        break;
+                    }
+                }
+                
+                // Always redirect back to listen_for_commands after finishing or stopping
+                showStatus('Finished reading all emails. Returning to command mode...', 'success');
+                // Redirect to listen_for_commands after a brief delay
+                await sleep(2000);
+                
+                // Use direct page reload instead of the returnToMainMenu function
+                // This is more reliable and ensures we get back to command mode
+                location.reload();
+                
+            } catch (error) {
+                console.error('Error in email reading sequence:', error);
+                showStatus('An error occurred. Returning to command mode...', 'error');
+                await sleep(2000);
+                // Use direct page reload on error as well
+                location.reload();
+            }
+        }
+
+        function showRetryButton() {
+            return new Promise((resolve) => {
+                const retryButton = document.createElement('button');
+                retryButton.className = 'button';
+                retryButton.textContent = 'Retry';
+                retryButton.onclick = () => {
+                    showStatus('Retrying...', 'info');
+                    retryButton.remove();
+                    resolve(true);
+                };
+                
+                const skipButton = document.createElement('button');
+                skipButton.className = 'button secondary';
+                skipButton.textContent = 'Stop Reading';
+                skipButton.onclick = () => {
+                    showStatus('Stopped reading emails', 'info');
+                    retryButton.remove();
+                    skipButton.remove();
+                    resolve(false);
+                };
+                
+                document.getElementById('status').appendChild(retryButton);
+                document.getElementById('status').appendChild(skipButton);
+            });
+        }
+
+        // Helper function to return to main menu from anywhere
+        function returnToMainMenu() {
+            fetch('/listen_for_commands', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Process the action
+                    switch(data.action) {
+                        case 'compose':
+                            showStatus('Voice command recognized: Compose Email', 'success');
+                            composeEmail();
+                            break;
+                        case 'read_inbox':
+                            showStatus('Voice command recognized: Read Inbox', 'success');
+                            readInbox();
+                            break;
+                        case 'read_unread':
+                            showStatus('Voice command recognized: Read Unread', 'success');
+                            readUnread();
+                            break;
+                        case 'read_sent':
+                            showStatus('Voice command recognized: Read Sent Mail', 'success');
+                            readSent();
+                            break;
+                        case 'read_trash':
+                            showStatus('Voice command recognized: Read Trash', 'success');
+                            readTrash();
+                            break;
+                        case 'listen_for_commands':
+                            showStatus('Returning to main menu...', 'info');
+                            if (data.reload_page) {
+                                location.reload();
+                            } else {
+                                setTimeout(continuousListening, 1500);
+                            }
+                            break;
+                        case 'help':
+                            showStatus('Available commands: compose email, read inbox, read unread, read sent, read trash, return to main menu, logout, help', 'info');
+                            setTimeout(continuousListening, 3000);
+                            break;
+                        case 'stop_listening':
+                            showStatus('Voice commands stopped', 'info');
+                            break;
+                        case 'logout':
+                            showStatus('Voice command recognized: Logout', 'success');
+                            logout();
+                            break;
+                        default:
+                            showStatus('Waiting for command...', 'info');
+                            if (continuousListeningEnabled) {
+                                setTimeout(continuousListening, 1500);
+                            }
+                            break;
+                    }
+                } else {
+                    showStatus('Error: ' + data.message, 'error');
+                    // If error, still try to continue listening
+                    if (continuousListeningEnabled) {
+                        setTimeout(continuousListening, 3000);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus('An error occurred while listening for commands', 'error');
+                // If error, still try to continue listening
+                if (continuousListeningEnabled) {
+                    setTimeout(continuousListening, 3000);
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
