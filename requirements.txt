@@ -1,0 +1,7 @@
+flask
+SpeechRecognition
+PyAudio
+pyttsx3
+secure-smtplib
+python-dotenv
+email 
